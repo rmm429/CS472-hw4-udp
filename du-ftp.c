@@ -75,7 +75,8 @@ static int initParams(int argc, char *argv[], prog_config *cfg){
 int server_loop(dp_connp dpc, void *sBuff, void *rBuff, int sbuff_sz, int rbuff_sz){
     int rcvSz;
 
-    FILE *f = fopen(full_file_path, "wb+");
+    // open the file
+    FILE *f = fopen(full_file_path, "wb+"); // write binary & overwrite
     if(f == NULL){
         printf("ERROR:  Cannot open file %s\n", full_file_path);
         exit(-1);
@@ -88,7 +89,7 @@ int server_loop(dp_connp dpc, void *sBuff, void *rBuff, int sbuff_sz, int rbuff_
     while(1) {
 
         //receive request from client
-        rcvSz = dprecv(dpc, rBuff, rbuff_sz);
+        rcvSz = dprecv(dpc, rBuff, rbuff_sz); // waiting for stuff from the client (neg. is error, pos. is # of bytes)
         if (rcvSz == DP_CONNECTION_CLOSED){
             fclose(f);
             printf("Client closed connection\n");
@@ -126,11 +127,13 @@ void start_client(dp_connp dpc){
 
     int bytes = 0;
 
-    while ((bytes = fread(sBuff, 1, sizeof(sBuff), f )) > 0)
+    // keeps track of bytes and calls dpsent() on whatever it recieves
+    // read 500 bytes, send 500 bytes
+    while ((bytes = fread(sBuff, 1, sizeof(sBuff), f )) > 0) // size of sBuff is 500 bytes
         dpsend(dpc, sBuff, bytes);
 
     fclose(f);
-    dpdisconnect(dpc);
+    dpdisconnect(dpc); // 
 }
 
 void start_server(dp_connp dpc){
@@ -158,8 +161,8 @@ int main(int argc, char *argv[])
         case PROG_MD_CLI:
             //by default client will look for files in the ./outfile directory
             snprintf(full_file_path, sizeof(full_file_path), "./outfile/%s", cfg.file_name);
-            dpc = dpClientInit(cfg.svr_ip_addr,cfg.port_number);
-            rc = dpconnect(dpc);
+            dpc = dpClientInit(cfg.svr_ip_addr,cfg.port_number); // IP address has to be numbers
+            rc = dpconnect(dpc); // similar to a socket
             if (rc < 0) {
                 perror("Error establishing connection");
                 exit(-1);
@@ -172,8 +175,8 @@ int main(int argc, char *argv[])
         case PROG_MD_SVR:
             //by default server will look for files in the ./infile directory
             snprintf(full_file_path, sizeof(full_file_path), "./infile/%s", cfg.file_name);
-            dpc = dpServerInit(cfg.port_number);
-            rc = dplisten(dpc);
+            dpc = dpServerInit(cfg.port_number); // IP address not needed
+            rc = dplisten(dpc); // starts the server and waits for a request from the client
             if (rc < 0) {
                 perror("Error establishing connection");
                 exit(-1);

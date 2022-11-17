@@ -28,6 +28,7 @@ void dpclose(dp_connp dpsession) {
     free(dpsession);
 }
 
+// maximum datagram, supports 512 bytes
 int  dpmaxdgram(){
     return DP_MAX_BUFF_SZ;
 }
@@ -49,7 +50,7 @@ dp_connp dpServerInit(int port) {
         
 
     // Creating socket file descriptor 
-    if ( (*sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) { 
+    if ( (*sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) { // DGRAM = UDP
         perror("socket creation failed"); 
         return NULL;
     } 
@@ -98,7 +99,7 @@ dp_connp dpClientInit(char *addr, int port) {
     servaddr = &(dpc->outSockAddr.addr);
 
     // Creating socket file descriptor 
-    if ( (*sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) { 
+    if ( (*sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) { // DGRAM = UDP
         perror("socket creation failed"); 
         return NULL;
     } 
@@ -116,7 +117,8 @@ dp_connp dpClientInit(char *addr, int port) {
     return dpc;
 }
 
-
+// WHERE YOU WILL WRITE CODE
+// as of right now, only calls dprecvdgram() (not raw)
 int dprecv(dp_connp dp, void *buff, int buff_sz){
 
     dp_pdu *inPdu;
@@ -125,7 +127,7 @@ int dprecv(dp_connp dp, void *buff, int buff_sz){
     if(rcvLen == DP_CONNECTION_CLOSED)
         return DP_CONNECTION_CLOSED;
 
-    inPdu = (dp_pdu *)_dpBuffer;
+    inPdu = (dp_pdu *)_dpBuffer; // take PDU off top of buffer
     if(rcvLen > sizeof(dp_pdu))
         memcpy(buff, (_dpBuffer+sizeof(dp_pdu)), inPdu->dgram_sz);
 
@@ -185,13 +187,13 @@ static int dprecvdgram(dp_connp dp, void *buff, int buff_sz){
 
 
     switch(inPdu.mtype){
-        case DP_MT_SND:
+        case DP_MT_SND: // need to send back a send ACK
             outPdu.mtype = DP_MT_SNDACK;
             actSndSz = dpsendraw(dp, &outPdu, sizeof(dp_pdu));
             if (actSndSz != sizeof(dp_pdu))
                 return DP_ERROR_PROTOCOL;
             break;
-        case DP_MT_CLOSE:
+        case DP_MT_CLOSE: // need to send back a close ACK
             outPdu.mtype = DP_MT_CLOSEACK;
             actSndSz = dpsendraw(dp, &outPdu, sizeof(dp_pdu));
             if (actSndSz != sizeof(dp_pdu))
@@ -208,7 +210,7 @@ static int dprecvdgram(dp_connp dp, void *buff, int buff_sz){
     return bytesIn;
 }
 
-
+// hint: just does the socket stuff
 static int dprecvraw(dp_connp dp, void *buff, int buff_sz){
     int bytes = 0;
 
@@ -243,6 +245,8 @@ static int dprecvraw(dp_connp dp, void *buff, int buff_sz){
     return bytes;
 }
 
+// WHERE YOU WILL WRITE CODE
+// as of right now, only calls dpsenddgram() (not raw)
 int dpsend(dp_connp dp, void *sbuff, int sbuff_sz){
 
 
@@ -292,7 +296,7 @@ static int dpsenddgram(dp_connp dp, void *sbuff, int sbuff_sz){
 
     //need to get an ack
     dp_pdu inPdu = {0};
-    int bytesIn = dprecvraw(dp, &inPdu, sizeof(dp_pdu));
+    int bytesIn = dprecvraw(dp, &inPdu, sizeof(dp_pdu)); // where it will get the ACK
     if ((bytesIn < sizeof(dp_pdu)) && (inPdu.mtype != DP_MT_SNDACK)){
         printf("Expected SND/ACK but got a different mtype %d\n", inPdu.mtype);
     }
@@ -394,6 +398,7 @@ int dpconnect(dp_connp dp) {
     return true;
 }
 
+// builds a close PDU and sends it
 int dpdisconnect(dp_connp dp) {
 
     int sndSz, rcvSz;
