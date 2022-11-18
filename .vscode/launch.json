@@ -9,24 +9,26 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/du-ftp",
-            "args": ["-s"],
+            "args": ["-s", "-f", "test_ftp.txt"],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",
             "environment": [],
             "externalConsole": false,
-            "MIMode": "lldb"
+            "MIMode": "gdb"
+            // "MIMode": "lldb"
         },
         {
             "name": "client",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/du-ftp",
-            "args": ["-c"],
+            "args": ["-c", "-f", "test.txt"],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",
             "environment": [],
             "externalConsole": false,
-            "MIMode": "lldb"
+            "MIMode": "gdb"
+            // "MIMode": "lldb"
         }
 
     ]
