@@ -1,5 +1,11 @@
-# Executable
+### VSCODE ###
+.vscode
+
+# objs #
+objs
+
+# executable #
 du-ftp
 
-# output files
-objs
+# MacOS generated files
+.DS_Store
