@@ -1,5 +1,5 @@
 This is a test file
-To test a small file
-For the program
-We will see how it goes
+This will test functionality
+But at a small level
+Ok I am done
 BYE!

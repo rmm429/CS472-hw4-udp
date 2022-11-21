@@ -6,7 +6,6 @@
 #include <sys/un.h>
 #include <time.h>
 #include <sys/socket.h>
-#include <bits/socket.h>
 
 #include "du-proto.h"
 
