@@ -11,3 +11,6 @@ du-ftp
 
 # MacOS generated files
 .DS_Store
+
+# test file received by the server
+infile/test_recv.txt
