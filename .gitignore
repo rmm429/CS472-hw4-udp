@@ -3,6 +3,8 @@
 
 # compiler output files (not folder itself, but files in folder) #
 objs/*
+# exception to the rule
+!objs/.gitkeep 
 
 # executable #
 du-ftp
