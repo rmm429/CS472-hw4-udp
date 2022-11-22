@@ -1,8 +1,8 @@
 ### VSCODE ###
 .vscode
 
-# compiler output files #
-objs
+# compiler output files (not folder itself, but files in folder) #
+objs/*
 
 # executable #
 du-ftp
