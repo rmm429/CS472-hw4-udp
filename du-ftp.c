@@ -30,10 +30,10 @@ static int initParams(int argc, char *argv[], prog_config *cfg){
     static char cmdBuffer[64] = {0};
 
     //setup defaults if no arguements are passed
-    cfg->prog_mode = PROG_MD_CLI;
-    cfg->port_number = DEF_PORT_NO;
-    strcpy(cfg->file_name, PROG_DEF_FNAME);
-    strcpy(cfg->svr_ip_addr, PROG_DEF_SVR_ADDR);
+    cfg->prog_mode = PROG_MD_CLI; // default to client mode
+    cfg->port_number = DEF_PORT_NO; // default to port 2080
+    strcpy(cfg->file_name, PROG_DEF_FNAME); // default to file name test.c
+    strcpy(cfg->svr_ip_addr, PROG_DEF_SVR_ADDR); // default to server IP 127.0.0.1
     
     while ((option = getopt(argc, argv, ":p:f:a:csh")) != -1){
         switch(option) {
@@ -149,10 +149,9 @@ int main(int argc, char *argv[])
     dp_connp dpc;
     int rc;
 
-
     //Process the parameters and init the header - look at the helpers
     //in the cs472-pproto.c file
-    cmd = initParams(argc, argv, &cfg);
+    cmd = initParams(argc, argv, &cfg); // will be 0 for Client and 1 for Server
 
     printf("MODE %d\n", cfg.prog_mode);
     printf("PORT %d\n", cfg.port_number);
