@@ -12,6 +12,14 @@
 static char _dpBuffer[DP_MAX_DGRAM_SZ];
 static int  _debugMode = 1;
 
+/*
+ * Initializes a UDP connection session to default values
+ * Will contain information such as the sequence number,
+   UDP socket, out socket address, and in socket address
+ * The sockets within the connection session will contain
+   information such as the socket length and the
+   socket address (of which itself is a socket address object)
+*/
 static dp_connp dpinit(){
     dp_connp dpsession = malloc(sizeof(dp_connection));
     bzero(dpsession, sizeof(dp_connection));
@@ -35,6 +43,16 @@ int  dpmaxdgram(){
 }
 
 
+/*
+ * Will initialize the server dp connection
+ * A socket will be initialized within the dp connection as a UDP connection
+ * The server information will then be set in the dp connection
+ * The server address for the in socket within the dp connection
+   will be given the port number (the address is automatically assigned to accept any incoming messages)
+ * The socket options will be set for the port and address so that we do not
+   have to wait for ports and addresses held by the OS
+ * The socket will then be bound to the server address
+*/
 dp_connp dpServerInit(int port) {
     struct sockaddr_in *servaddr;
     int *sock;
@@ -85,7 +103,15 @@ dp_connp dpServerInit(int port) {
     return dpc;
 }
 
-
+/*
+ * Will initialize the client dp connection
+ * A socket will be initialized within the dp connection as a UDP connection
+ * The server information will then be set in the dp connection
+ * The server address for the out socket within the dp connection
+   will be given the port number and address supplied by the application
+ * The in socket will then be set to be the same info as the out socket,
+   since the inbound address is the same as the outbound address
+*/
 dp_connp dpClientInit(char *addr, int port) {
     struct sockaddr_in *servaddr;
     int *sock;
@@ -361,6 +387,9 @@ int dplisten(dp_connp dp) {
     return true;
 }
 
+/*
+
+*/
 int dpconnect(dp_connp dp) {
 
     int sndSz, rcvSz;

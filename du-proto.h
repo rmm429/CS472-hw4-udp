@@ -59,7 +59,7 @@ typedef struct dp_pdu {
 } dp_pdu;
 
 #define     DP_MAX_BUFF_SZ          512
-#define     DP_MAX_DGRAM_SZ         (DP_MAX_BUFF_SZ + sizeof(dp_pdu))
+#define     DP_MAX_DGRAM_SZ         (DP_MAX_BUFF_SZ + sizeof(dp_pdu)) // 512 + 20 = 532
 
 #define     DP_NO_ERROR             0
 #define     DP_ERROR_GENERAL        -1

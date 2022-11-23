@@ -160,7 +160,7 @@ int main(int argc, char *argv[])
     switch(cmd){
         case PROG_MD_CLI:
             //by default client will look for files in the ./outfile directory
-            snprintf(full_file_path, sizeof(full_file_path), "./outfile/%s", cfg.file_name);
+            snprintf(full_file_path, sizeof(full_file_path), "./outfile/%s", cfg.file_name); // set the full file path
             dpc = dpClientInit(cfg.svr_ip_addr,cfg.port_number); // IP address has to be numbers
             rc = dpconnect(dpc); // similar to a socket
             if (rc < 0) {
