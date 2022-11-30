@@ -37,18 +37,26 @@ typedef struct dp_connection *dp_connp;
 //   O   G   K   S   C   D
 //   R           E   T
 //-------------------------------
-#define DP_MT_ACK        1              //ACK MSG
-#define DP_MT_SND        2              //SND MSG
-#define DP_MT_CONNECT    4              //Connect MSG
-#define DP_MT_CLOSE      8              //CLOSE MSG
-#define DP_MT_NACK       16             //NEG ACK
-#define DP_MT_FRAGMENT   32             //DGRAM IS A FRAGMENT
-#define DP_MT_ERROR      64             //SIMULATE ERROR
+#define DP_MT_ACK        1              //ACK MSG                                   00000001
+#define DP_MT_SND        2              //SND MSG                                   00000010
+#define DP_MT_CONNECT    4              //Connect MSG                               00000100
+#define DP_MT_CLOSE      8              //CLOSE MSG                                 00001000
+#define DP_MT_NACK       16             //NEG ACK                                   00010000
+#define DP_MT_FRAGMENT   32             //DGRAM IS A FRAGMENT:                      00100000
+#define DP_MT_ERROR      64             //SIMULATE ERROR:                           01000000
+
+#define DP_MT_SNDFRAG (DP_MT_SND | DP_MT_FRAGMENT) // SEND FRAGMENT = 34            00100010
 
 //Message ACKS, ACK OR'ed with Message Type
-#define DP_MT_SNDACK    (DP_MT_SND     | DP_MT_ACK)
-#define DP_MT_CNTACK    (DP_MT_CONNECT | DP_MT_ACK)
-#define DP_MT_CLOSEACK  (DP_MT_CLOSE   | DP_MT_ACK)
+#define DP_MT_SNDACK    (DP_MT_SND     | DP_MT_ACK) // SEND ACK = 3                 00000011
+#define DP_MT_CNTACK    (DP_MT_CONNECT | DP_MT_ACK) // CONNECT ACK = 5              00000101
+#define DP_MT_CLOSEACK  (DP_MT_CLOSE   | DP_MT_ACK) // CLOSE ACK = 9                00001001
+
+#define DP_MT_SNDFRAGACK (DP_MT_SNDACK | DP_MT_FRAGMENT) // SEND FRAGMENT ACK = 35  00100011
+
+// determines if the current message type is a fragment
+// will return true as long as the bit in the 6th position is on (1)
+#define IS_MT_FRAGMENT(x) ((x & DP_MT_FRAGMENT) == DP_MT_FRAGMENT)
 
 typedef struct dp_pdu {
     int     proto_ver;
@@ -59,7 +67,7 @@ typedef struct dp_pdu {
 } dp_pdu;
 
 #define     DP_MAX_BUFF_SZ          512
-#define     DP_MAX_DGRAM_SZ         (DP_MAX_BUFF_SZ + sizeof(dp_pdu)) // 512 + 20 = 532
+#define     DP_MAX_DGRAM_SZ         (DP_MAX_BUFF_SZ + sizeof(dp_pdu)) // 512 + 20 (five 4-byte ints) = 532
 
 #define     DP_NO_ERROR             0
 #define     DP_ERROR_GENERAL        -1

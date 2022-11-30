@@ -59,7 +59,7 @@ static int initParams(int argc, char *argv[], prog_config *cfg){
                 printf("\t[-a svr_addr] specifies the servers IP address as a string; DEFAULT = %s\n", cfg->svr_ip_addr);
                 printf("\t[-p portnum] specifies the port number; DEFAULT = %d\n", cfg->port_number);
                 printf("\t[-f fname] specifies the filename to send or recv; DEFAULT = %s\n", cfg->file_name);
-                printf("\t[-p] displays what you are looking at now - the help\n\n");
+                printf("\t[-h] displays what you are looking at now - the help\n\n");
                 exit(0);
             case ':':
                 perror ("Option missing value");
