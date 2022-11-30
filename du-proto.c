@@ -343,16 +343,30 @@ static int dprecvraw(dp_connp dp, void *buff, int buff_sz){
 */
 int dpsend(dp_connp dp, void *sbuff, int sbuff_sz){
 
+    void *sptr = sbuff;
+    int totalToSend = sbuff_sz;
+    int amountSent = 0, curSend = 512;
 
-    // GET RID OF THIS CODE
-    //For now, we will not be able to send larger than the biggest datagram
-    if(sbuff_sz > dpmaxdgram()) {
-        return DP_BUFF_UNDERSIZED;
+    while(totalToSend > 0) {
+        if (totalToSend < curSend) {
+            curSend = totalToSend;
+        }
+        amountSent = dpsenddgram(dp, sptr, curSend);
+        totalToSend -= amountSent;
+        sptr += amountSent;
     }
 
-    int sndSz = dpsenddgram(dp, sbuff, sbuff_sz);
+    // // GET RID OF THIS CODE
+    // //For now, we will not be able to send larger than the biggest datagram
+    // if(sbuff_sz > dpmaxdgram()) {
+    //     return DP_BUFF_UNDERSIZED;
+    // }
 
-    return sndSz;
+    // int sndSz = dpsenddgram(dp, sbuff, sbuff_sz);
+
+    // return sndSz;
+
+    return sbuff_sz;
 }
 
 /*

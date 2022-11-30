@@ -108,7 +108,8 @@ int server_loop(dp_connp dpc, void *sBuff, void *rBuff, int sbuff_sz, int rbuff_
 
 
 void start_client(dp_connp dpc){
-    static char sBuff[500];
+    // static char sBuff[500];
+    static char sBuff[3000];
 
     if(!dpc->isConnected) {
         printf("Client not connected\n");
@@ -128,10 +129,13 @@ void start_client(dp_connp dpc){
 
     int bytes = 0;
 
-    // keeps track of bytes and calls dpsent() on whatever it recieves
-    // read 500 bytes, send 500 bytes
-    while ((bytes = fread(sBuff, 1, sizeof(sBuff), f )) > 0) // size of sBuff is 500 bytes
-        dpsend(dpc, sBuff, bytes);
+    // // keeps track of bytes and calls dpsend() on whatever it recieves
+    // // read 500 bytes, send 500 bytes
+    // while ((bytes = fread(sBuff, 1, sizeof(sBuff), f )) > 0) // size of sBuff is 500 bytes
+    //     dpsend(dpc, sBuff, bytes);
+
+    bytes = fread(sBuff, 1, sizeof(sBuff), f );
+    dpsend(dpc, sBuff, bytes);
 
     fclose(f);
     dpdisconnect(dpc); // 
