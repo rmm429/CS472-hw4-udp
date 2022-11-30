@@ -164,6 +164,16 @@ dp_connp dpClientInit(char *addr, int port) {
 // WHERE YOU WILL WRITE CODE
 // as of right now, only calls dprecvdgram() (not raw)
 
+/*
+ * Initiate the recieve process
+ * Will call dpsenddgram() which will
+   recieve file data and build an ACK PDU
+ * Next, if a connection close was recieved, the method
+   will return said close connection number
+ * Then, if not a connection close, the file data will be
+   extracted from the recieve buffer
+ * Finally, datagram size from the PDU will be returned
+*/
 int dprecv(dp_connp dp, void *buff, int buff_sz){
 
     dp_pdu *inPdu;
@@ -175,7 +185,7 @@ int dprecv(dp_connp dp, void *buff, int buff_sz){
         return DP_CONNECTION_CLOSED;
 
     // PDU will have the total number of bytes that will be coming
-    // go into a loop until you get thos number of bytesu
+    // go into a loop until you get thos number of bytes
     inPdu = (dp_pdu *)_dpBuffer; // take PDU off top of buffer
     if(rcvLen > sizeof(dp_pdu))
         memcpy(buff, (_dpBuffer+sizeof(dp_pdu)), inPdu->dgram_sz); // ignores the PDU
@@ -322,6 +332,15 @@ static int dprecvraw(dp_connp dp, void *buff, int buff_sz){
 // but dpsend() should not be limited to 512 (the buffers should not be limited)
 // wrap dpsenddgram() in a loop
 // sbuff_sz should not be bigger than 512 when sent to dpsenddgram()
+
+/*
+ * Initiate the send process
+ * Will first ensure that the buffer size is no
+   larger than the max datagram size
+ * Then, it will call dpsenddgram() which will
+   build and send the PDU as well as the file data 
+ * Finally, the bytes sent will be returned
+*/
 int dpsend(dp_connp dp, void *sbuff, int sbuff_sz){
 
 
@@ -464,6 +483,17 @@ int dplisten(dp_connp dp) {
     return true;
 }
 
+/*
+ * Connect the client to the server
+   and recieve an acknowlegement from the server
+ * First, an initial PDU will be constructred and sent
+   to the server via dpsendraw() to establish a connection
+ * Next, the client will call dprecvraw() to recieve an
+   ACK from the server that the connection was established
+ * Then, the sequence number in the protocol structure will be
+   incremented by 1 to confirm the ACK recieved
+ * Finally, the method will return true to acknowledge the connection
+*/
 int dpconnect(dp_connp dp) {
 
     int sndSz, rcvSz;
@@ -540,6 +570,11 @@ int dpdisconnect(dp_connp dp) {
     return DP_CONNECTION_CLOSED;
 }
 
+/*
+ * Will copy a PDU to a buffer
+   and return the location where the
+   data portion of the buffer starts
+*/
 void * dp_prepare_send(dp_pdu *pdu_ptr, void *buff, int buff_sz) {
     if (buff_sz < sizeof(dp_pdu)) {
         perror("Expected CNTACT Message but didnt get it");
