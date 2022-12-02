@@ -76,6 +76,7 @@ typedef struct dp_pdu {
 #define     DP_BUFF_OVERSIZED       -8
 #define     DP_CONNECTION_CLOSED    -16
 #define     DP_ERROR_BAD_DGRAM      -32
+//#define     DP_ERROR_TIMEOUT        -64
 
 //PROTOTYPES - INTERNAL HELPERS
 static dp_connp dpinit();

@@ -14,6 +14,7 @@ static char sbuffer[BUFF_SZ];
 static char rbuffer[BUFF_SZ];
 static char full_file_path[FNAME_SZ];
 
+// Larger buffers to store the whole file
 #define BIG_BUFF_SZ 1000000
 static char sBigBuffer[BIG_BUFF_SZ];
 static char rBigBuffer[BIG_BUFF_SZ];
@@ -101,6 +102,10 @@ int server_loop(dp_connp dpc, void *sBuff, void *rBuff, int sbuff_sz, int rbuff_
             return DP_CONNECTION_CLOSED;
         }
         fwrite(rBuff, 1, rcvSz, f);
+
+        // File chunk printing is no longer useful
+        // Because the whole file will be read in dprecv()
+
         // rcvSz = rcvSz > 50 ? 50 : rcvSz;    //Just print the first 50 characters max
 
         // printf("========================> \n%.*s\n========================> \n", 
@@ -112,7 +117,8 @@ int server_loop(dp_connp dpc, void *sBuff, void *rBuff, int sbuff_sz, int rbuff_
 
 
 void start_client(dp_connp dpc){
-    // static char sBuff[500];
+
+    // Array can now hold an entire file up to 1mil bytes
     static char sBuff[BIG_BUFF_SZ];
 
     if(!dpc->isConnected) {
@@ -131,22 +137,18 @@ void start_client(dp_connp dpc){
         exit(-1);
     }
 
+    // Now reads the entire file and sends it to dpsend()
     int bytes = 0;
-
-    // // keeps track of bytes and calls dpsend() on whatever it recieves
-    // // read 500 bytes, send 500 bytes
-    // while ((bytes = fread(sBuff, 1, sizeof(sBuff), f )) > 0) // size of sBuff is 500 bytes
-    //     dpsend(dpc, sBuff, bytes);
-
     bytes = fread(sBuff, 1, sizeof(sBuff), f );
     dpsend(dpc, sBuff, bytes);
 
     fclose(f);
-    dpdisconnect(dpc); // 
+    dpdisconnect(dpc);
 }
 
 void start_server(dp_connp dpc){
-    server_loop(dpc, sbuffer, rbuffer, sizeof(sbuffer), sizeof(rbuffer));
+    // Now uses a buffer with 1mil bytes
+    server_loop(dpc, sBigBuffer, rBigBuffer, sizeof(sBigBuffer), sizeof(rBigBuffer));
 }
 
 

@@ -13,3 +13,25 @@ typedef struct prog_config{
     char    svr_ip_addr[16];
     char    file_name[128];
 } prog_config;
+
+/*
+ * PDU for the file transfer protocol
+ * Can store file name, data transfer status
+   (for both sends and recieves),
+   error information (mainly for the file),
+   and the file descriptor of the file.
+ * NOTE: fd can be stored by calling fileno()
+   on the FILE object, this was used as an alternative
+   to storing the entire FILE object in the PDU.
+   This way, operations on the file (such as close) can
+   be done without needing the entire FILE object.
+ * NOTE TO GRADER: the README for this homework said to
+   define the PDU but nothing about implementing it.
+   Thus, this structure is not used in du-ftp.c
+ */
+typedef struct ftp_pdu {
+    char    file_name[128];
+    int     data_transfer_status;
+    int     err_num;
+    int     fd;
+} ftp_pdu;

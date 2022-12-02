@@ -6,6 +6,7 @@
 #include <sys/un.h>
 #include <time.h>
 #include <sys/socket.h>
+//#include <sys/time.h>
 
 #include "du-proto.h"
 
@@ -13,17 +14,17 @@ static char _dpBuffer[DP_MAX_DGRAM_SZ];
 static int  _debugMode = 1;
 
 /*
- * The protocol connection will be initialized with default values and returned
+ * The protocol connection will be initialized with default values and returned.
  * First, the initialization for the addresses for the in and out sockets
-   will be set to false, meaning they have not been initialized yet
+   will be set to false, meaning they have not been initialized yet.
  * Next, the length of the in and out sockets will be set to whatever
-   the size of a socket structure is, ensuring appropriate storage size
+   the size of a socket structure is, ensuring appropriate storage size.
  * Then, the initial sequence number will be set to 0, the connection property
    will be set to false (as we have not connected yet), and debug mode will be
-   set to true
+   set to true.
  * The only properties of the session that have not been initialized here are
    the udp socket file descriptor (udp_sock) and the address of the in and out
-   sockets (each of which are their own socket structures with additional properties)
+   sockets (each of which are their own socket structures with additional properties).
 */
 static dp_connp dpinit(){
     dp_connp dpsession = malloc(sizeof(dp_connection));
@@ -56,17 +57,17 @@ int  dpmaxdgram(){
 }
 
 /*
- * Will initialize the server protocol connection
- * A protocol connection will be initalized with default values
+ * Will initialize the server protocol connection.
+ * A protocol connection will be initalized with default values.
  * Next, a variable for the udp socket and in socket address
-   will be initialized by reference from the protocol connection object
- * Then, the udp socket endpoint will be created
+   will be initialized by reference from the protocol connection object.
+ * Then, the udp socket endpoint will be created.
  * After that, the server information will be filled in,
    including the port passed to this method (the IP address will be
-   automatically assigned to accept any incoming messages)
+   automatically assigned to accept any incoming messages).
  * Then, the socket options will be set for the port and address so that we do not
-   have to wait for ports and addresses held by the OS
- * Lastly, the in socket will be bound to the address of the in socket
+   have to wait for ports and addresses held by the OS.
+ * Lastly, the in socket will be bound to the address of the in socket.
 */
 dp_connp dpServerInit(int port) {
     struct sockaddr_in *servaddr;
@@ -105,6 +106,18 @@ dp_connp dpServerInit(int port) {
         close(*sock);
         return NULL;
     }
+
+    // struct timeval tv;
+    // tv.tv_sec = 10;
+    // tv.tv_usec = 0;
+    // if (setsockopt(*sock, SOL_SOCKET, SO_RCVTIMEO,&tv,sizeof(tv)) < 0) {
+    //     perror("RECV TIME ERROR");
+    // }
+    // if (setsockopt(*sock, SOL_SOCKET, SO_SNDTIMEO,&tv,sizeof(tv)) < 0) {
+    //     perror("SEND TIME ERROR");
+    // }
+
+
     if ( (rc = bind(*sock, (const struct sockaddr *)servaddr,  
             dpc->inSockAddr.len)) < 0 ) 
     { 
@@ -119,15 +132,15 @@ dp_connp dpServerInit(int port) {
 }
 
 /*
- * Will initialize the client protocol connection
- * A protocol connection will be initalized with default values
+ * Will initialize the client protocol connection.
+ * A protocol connection will be initalized with default values.
  * Next, a variable for the udp socket and out socket address
-   will be initialized by reference from the protocol connection object
- * Then, the udp socket endpoint will be created
+   will be initialized by reference from the protocol connection object.
+ * Then, the udp socket endpoint will be created.
  * After that, the server information will be filled in,
-   including the server IP address and port passed to this method
- * Lastly, the in socket will be set to the same attributes as the
-   out socket, since the inbound address is also the outbound address
+   including the server IP address and port passed to this method.
+ * Finally, the in socket will be set to the same attributes as the
+   out socket, since the inbound address is also the outbound address.
 */
 dp_connp dpClientInit(char *addr, int port) {
     struct sockaddr_in *servaddr;
@@ -161,18 +174,18 @@ dp_connp dpClientInit(char *addr, int port) {
     return dpc;
 }
 
-// WHERE YOU WILL WRITE CODE
-// as of right now, only calls dprecvdgram() (not raw)
-
 /*
- * Initiate the recieve process
- * Will call dpsenddgram() which will
-   recieve file data and build an ACK PDU
+ * Initiate the recieve process.
+ * Will loop until the entire file is recieved.
+ * The loop will be broken when either a connection closed
+   is recieved or fragments are done being sent.
+ * In the loop, dpsenddgram() will be called which will
+   recieve file data and build an ACK PDU.
  * Next, if a connection close was recieved, the method
-   will return said close connection number
+   will return said close connection number.
  * Then, if not a connection close, the file data will be
-   extracted from the recieve buffer
- * Finally, datagram size from the PDU will be returned
+   extracted from the recieve buffer.
+ * After the loop is finished, return the total bytes recieved.
 */
 int dprecv(dp_connp dp, void *buff, int buff_sz){
 
@@ -182,8 +195,7 @@ int dprecv(dp_connp dp, void *buff, int buff_sz){
     int amount_recieved = 0;
     bool isFragment = false;
 
-    // WRAP THIS IN A LOOP
-    // first recv is 512
+    // Loop to read the entire file
     do {
 
         amount_recieved = dprecvdgram(dp, _dpBuffer, sizeof(_dpBuffer));
@@ -194,42 +206,30 @@ int dprecv(dp_connp dp, void *buff, int buff_sz){
         if(amount_recieved > sizeof(dp_pdu))
             memcpy(rptr, (_dpBuffer+sizeof(dp_pdu)), inPdu->dgram_sz); // ignores the PDU
         
-        rptr += (amount_recieved - sizeof(dp_pdu));
-        totalRecieved += (amount_recieved - sizeof(dp_pdu));
+        rptr += (amount_recieved - sizeof(dp_pdu)); // don't want to increment an additional 20 bytes for the pdu
+        totalRecieved += (amount_recieved - sizeof(dp_pdu)); // don't want to increment an additional 20 bytes for the pdu
         isFragment = IS_MT_FRAGMENT(inPdu->mtype);
 
     } while(isFragment);
 
     return totalRecieved;
     
-    // int rcvLen = dprecvdgram(dp, _dpBuffer, sizeof(_dpBuffer));
-
-    // if(rcvLen == DP_CONNECTION_CLOSED)
-    //     return DP_CONNECTION_CLOSED;
-
-    // // PDU will have the total number of bytes that will be coming
-    // // go into a loop until you get thos number of bytes
-    // inPdu = (dp_pdu *)_dpBuffer; // take PDU off top of buffer
-    // if(rcvLen > sizeof(dp_pdu))
-    //     memcpy(buff, (_dpBuffer+sizeof(dp_pdu)), inPdu->dgram_sz); // ignores the PDU
-
-    // return inPdu->dgram_sz;
 }
 
 /*
- * Recieve raw data and build an ACK PDU based on the recieved data
- * First, raw data will be recieved from the socket
- * Next, the recieved (in) PDU will be stored
+ * Recieve raw data and build an ACK PDU based on the recieved data.
+ * First, raw data will be recieved from the socket.
+ * Next, the recieved (in) PDU will be stored.
  * After this, the PDU will be updated for an acknowlegement
    (as long as there is no error) by updating the
-   sequence number and incrementing it
+   sequence number and incrementing it.
  * Then, the out PDU will be constructed with the ACK
    appropriate info and will determine whether this is
-   a send ACK or a close ACK based on the message type recieved
- * Finally, the out PDU with the ACK info is sent
-   If the message type is send, the bytes recieved will be returned
+   a send ACK or a close ACK based on the message type recieved.
+ * Finally, the out PDU with the ACK info is sent.
+   If the message type is send or fragment, the bytes recieved will be returned.
    If the message type is close, the protocol strucutre will be freed
-   and the connection close number will be returned 
+   and the connection close number will be returned.
 */
 static int dprecvdgram(dp_connp dp, void *buff, int buff_sz){
     int bytesIn = 0;
@@ -250,11 +250,8 @@ static int dprecvdgram(dp_connp dp, void *buff, int buff_sz){
     if (inPdu.dgram_sz > buff_sz)
         errCode = DP_BUFF_UNDERSIZED;
     
+    // Determine if the in mtype is a fragment
     isFragment = IS_MT_FRAGMENT(inPdu.mtype);
-
-    //Copy buffer back
-    // memcpy(buff, (_dpBuffer+sizeof(dp_pdu)), inPdu.dgram_sz);
-    
     
     //UDPATE SEQ NUMBER AND PREPARE ACK
     if (errCode == DP_NO_ERROR){
@@ -286,15 +283,17 @@ static int dprecvdgram(dp_connp dp, void *buff, int buff_sz){
 
 
     switch(inPdu.mtype){
+        // Case for both send and fragment
         case DP_MT_SND: // need to send back a send ACK
         case DP_MT_SNDFRAG:
 
+            // If the in mtype is a fragment, then the out mtype is a fragment
+            // else, the out mtype is a regular send
             if(isFragment) {
                 outPdu.mtype = DP_MT_SNDFRAGACK;
             } else {
                 outPdu.mtype = DP_MT_SNDACK;
             }
-            // outPdu.mtype = DP_MT_SNDACK;
             
             actSndSz = dpsendraw(dp, &outPdu, sizeof(dp_pdu));
             if (actSndSz != sizeof(dp_pdu))
@@ -317,14 +316,13 @@ static int dprecvdgram(dp_connp dp, void *buff, int buff_sz){
     return bytesIn;
 }
 
-// hint: just does the socket stuff
 /*
- * Recieve raw data from a socket
- * Will connect to the udp socket and write the data to the buffer
- * recvfrom() will wait until a connection is established and data is recieved
+ * Recieve raw data from a socket.
+ * Will connect to the udp socket and write the data to the buffer.
+ * recvfrom() will wait until a connection is established and data is recieved.
  * Once the connection is established and the data is recieved, the data will be stored
    in a PDU, then the PDU will be printed (if in debug mode),
-   and the number of bytes recieved is returned
+   and the number of bytes recieved is returned.
 */
 static int dprecvraw(dp_connp dp, void *buff, int buff_sz){
     int bytes = 0;
@@ -360,20 +358,17 @@ static int dprecvraw(dp_connp dp, void *buff, int buff_sz){
     return bytes;
 }
 
-// WHERE YOU WILL WRITE CODE
-// as of right now, only calls dpsenddgram() (not raw)
-// the datagram itself cannot be larger than 512 bytes,
-// but dpsend() should not be limited to 512 (the buffers should not be limited)
-// wrap dpsenddgram() in a loop
-// sbuff_sz should not be bigger than 512 when sent to dpsenddgram()
-
 /*
- * Initiate the send process
- * Will first ensure that the buffer size is no
-   larger than the max datagram size
- * Then, it will call dpsenddgram() which will
-   build and send the PDU as well as the file data 
- * Finally, the bytes sent will be returned
+ * Initiate the send process.
+ * Since the entire file is now in the buffer,
+   the buffer will be looped 512 bytes at a time.
+ * A pointer to the file buffer will increment 512
+   bytes at a time until there is less than that left.
+ * dpsenddgram() will recieve that file pointer and
+   enforce the 512 byte cap for the datagram.
+ * After that, a check will be done to make sure that
+   the amount sent matches the size of the file.
+ * Finally, the amount sent will be returned.
 */
 int dpsend(dp_connp dp, void *sbuff, int sbuff_sz){
 
@@ -381,9 +376,8 @@ int dpsend(dp_connp dp, void *sbuff, int sbuff_sz){
     int totalToSend = sbuff_sz;
     int amountSent = 0;
     int curSend = 0;
-    
-    // int curSend = 512;
 
+    // Loop until the entire file is sent
     while(totalToSend > 0) {
 
         curSend = dpsenddgram(dp, sptr, totalToSend);
@@ -397,39 +391,24 @@ int dpsend(dp_connp dp, void *sbuff, int sbuff_sz){
 
     }
 
+    // Ensure that the amount sent is the same as the buffer size
     if(amountSent != sbuff_sz) {
-        printf("Error: sent %d, should have sent %d\n", amountSent, sbuff_sz);
+        printf("Error: sent %d bytes, should have sent %d bytes\n", amountSent, sbuff_sz);
     }
 
-    // while(totalToSend > 0) {
-    //     if (totalToSend < curSend) {
-    //         curSend = totalToSend;
-    //     }
-    //     amountSent = dpsenddgram(dp, sptr, curSend);
-    //     totalToSend -= amountSent;
-    //     sptr += amountSent;
-    // }
-
-    // // GET RID OF THIS CODE
-    // //For now, we will not be able to send larger than the biggest datagram
-    // if(sbuff_sz > dpmaxdgram()) {
-    //     return DP_BUFF_UNDERSIZED;
-    // }
-
-    // int sndSz = dpsenddgram(dp, sbuff, sbuff_sz);
-
-    // return sndSz;
-
-    return sbuff_sz;
+    return amountSent;
 }
 
 /*
- * Send PDU and raw data, recieve an ACK PDU back
- * First, the out PDU will be built and attached to the raw data
- * Next, the PDU + data will be sent out
- * After this, the sequence number will be approrpiately updated
+ * Send PDU and raw data, recieve an ACK PDU back.
+ * First, the method will ensure that if the buffer is larger
+   than 512 bytes, it will only send the first 512 bytes.
+ * Next, the out PDU will be built and attached to the raw data
+   while also determining if the mtype is a fragment or regular send.
+ * Then, the PDU + data will be sent out.
+ * After this, the sequence number will be approrpiately updated.
  * Finally, an in PDU will be recieved with the ACK information
-   and the number of bytes of data (not including the PDU) will be returned
+   and the number of bytes of data (not including the PDU) will be returned.
 */
 static int dpsenddgram(dp_connp dp, void *sbuff, int sbuff_sz){
     int bytesOut = 0;
@@ -442,25 +421,20 @@ static int dpsenddgram(dp_connp dp, void *sbuff, int sbuff_sz){
         return DP_ERROR_GENERAL;
     }
 
+    // Only send 512 bytes at a time
     if(sbuff_sz > DP_MAX_BUFF_SZ) {
-
         isFragment = true;
         totalToSend = DP_MAX_BUFF_SZ;
-
     }
-
-    // if(sbuff_sz > DP_MAX_BUFF_SZ)
-    //     return DP_ERROR_GENERAL;
 
     //Build the PDU and out buffer
     dp_pdu *outPdu = (dp_pdu *)_dpBuffer;
-    // int    sndSz = sbuff_sz;
     outPdu->proto_ver = DP_PROTO_VER_1;
-    // outPdu->mtype = DP_MT_SND;
     outPdu->dgram_sz = totalToSend;
-    // outPdu->dgram_sz = sndSz;
     outPdu->seqnum = dp->seqNum;
 
+    // If fragment, out and in mtypes should be fragments
+    // else, out and in mtypes should be regular sends
     if(isFragment) {
         outPdu->mtype = DP_MT_SNDFRAG;
         mTypeExpected = DP_MT_SNDFRAGACK;
@@ -470,7 +444,6 @@ static int dpsenddgram(dp_connp dp, void *sbuff, int sbuff_sz){
     }
 
     memcpy((_dpBuffer + sizeof(dp_pdu)), sbuff, totalToSend);
-    // memcpy((_dpBuffer + sizeof(dp_pdu)), sbuff, sndSz);
 
     int totalSendSz = outPdu->dgram_sz + sizeof(dp_pdu); // will add 20 (size of dp_pdu) to the file size
     bytesOut = dpsendraw(dp, _dpBuffer, totalSendSz);
@@ -497,15 +470,14 @@ static int dpsenddgram(dp_connp dp, void *sbuff, int sbuff_sz){
 
 
 /*
- * Send raw data to a socket
- * Will connect to the udp socket and send the data from the buffer
- * sendto() will wait until a connection is established and data is sent
+ * Send raw data to a socket.
+ * Will connect to the udp socket and send the data from the buffer.
+ * sendto() will wait until a connection is established and data is sent.
  * Once the connection is established and the data is send, the current PDU
-   will be printed (if in debug mode), and the number of bytes sent is returned
+   will be printed (if in debug mode), and the number of bytes sent is returned.
 */
 static int dpsendraw(dp_connp dp, void *sbuff, int sbuff_sz){
     int bytesOut = 0;
-    // dp_pdu *pdu = sbuff;
 
     if(!dp->outSockAddr.isAddrInit) {
         perror("dpsendraw:dp connection not setup properly");
@@ -525,17 +497,17 @@ static int dpsendraw(dp_connp dp, void *sbuff, int sbuff_sz){
 
 /*
  * Starts the server, waits for a request from the client,
-   and sends an acknowlegement to the client
+   and sends an acknowlegement to the client.
  * First, the server will call the dprecvraw() method and wait for a connection
    Once the client connects, the server recieves data and stores it in a PDU
-   The number of bytes recieved will be stored and checked
+   The number of bytes recieved will be stored and checked.
  * Next, the message type of the server PDU is set to connect ACK
    and the sequence number is incremented by 1 for both the PDU
-   and the server protocol connection
-* Then, the server will call the dpsendraw() to send the updated PDU to the client
-  The number of bytes sent will be stored and checked
-* Finally, if the connection ACK is recieved by the client, then a connection
-  is established and the method will return true to acknowledge this
+   and the server protocol connection.
+ * Then, the server will call the dpsendraw() to send the updated PDU to the client.
+   The number of bytes sent will be stored and checked.
+ * Finally, if the connection ACK is recieved by the client, then a connection
+   is established and the method will return true to acknowledge this.
 */
 int dplisten(dp_connp dp) {
     int sndSz, rcvSz;
@@ -573,14 +545,14 @@ int dplisten(dp_connp dp) {
 
 /*
  * Connect the client to the server
-   and recieve an acknowlegement from the server
+   and recieve an acknowlegement from the server.
  * First, an initial PDU will be constructred and sent
-   to the server via dpsendraw() to establish a connection
+   to the server via dpsendraw() to establish a connection.
  * Next, the client will call dprecvraw() to recieve an
-   ACK from the server that the connection was established
+   ACK from the server that the connection was established.
  * Then, the sequence number in the protocol structure will be
-   incremented by 1 to confirm the ACK recieved
- * Finally, the method will return true to acknowledge the connection
+   incremented by 1 to confirm the ACK recieved.
+ * Finally, the method will return true to acknowledge the connection.
 */
 int dpconnect(dp_connp dp) {
 
@@ -621,11 +593,11 @@ int dpconnect(dp_connp dp) {
 }
 
 /*
- * Builds a close PDU and sends it
+ * Builds a close PDU and sends it.
  * Once the close PDU is sent, a PDU will be
-   recieved containing the close ACK
- * Then, the protocol structure will be freed
- * Finally, the close connection number will be returned
+   recieved containing the close ACK.
+ * Then, the protocol structure will be freed.
+ * Finally, the close connection number will be returned.
 */
 int dpdisconnect(dp_connp dp) {
 
@@ -677,8 +649,8 @@ void * dp_prepare_send(dp_pdu *pdu_ptr, void *buff, int buff_sz) {
 
 //// MISC HELPERS
 /*
- * Calls a PDU print method to
-   print client PDU attributes
+ * Calls the PDU print method to
+   print outgoing PDU attributes
    (if in debug mode)
 */
 void print_out_pdu(dp_pdu *pdu) {
@@ -688,8 +660,8 @@ void print_out_pdu(dp_pdu *pdu) {
     print_pdu_details(pdu);
 }
 /*
- * Calls a PDU print method to
-   print server PDU attributes
+ * Calls the PDU print method to
+   print incoming PDU attributes
    (if in debug mode)
 */
 void print_in_pdu(dp_pdu *pdu) {
@@ -700,7 +672,7 @@ void print_in_pdu(dp_pdu *pdu) {
 }
 /*
  * Prints PDU attributes for both
-   the client and the server
+   the outgoing and incoming PDUs
 */
 static void print_pdu_details(dp_pdu *pdu){
     
@@ -712,8 +684,8 @@ static void print_pdu_details(dp_pdu *pdu){
 }
 
 /*
- * Converts the PDU message type Integer
-   to a String for printing purposes
+ * Associates each PDU message Integer type
+   with a String for printing purposes
 */
 static char * pdu_msg_to_string(dp_pdu *pdu) {
     switch(pdu->mtype){
@@ -733,6 +705,7 @@ static char * pdu_msg_to_string(dp_pdu *pdu) {
             return "CONNECT/ACK";    
         case DP_MT_CLOSEACK:
             return "CLOSE/ACK";
+        // Now includes fragment mtypes
         case DP_MT_SNDFRAG:
             return "SENDFRAG";
         case DP_MT_SNDFRAGACK:
