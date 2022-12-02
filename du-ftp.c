@@ -14,6 +14,10 @@ static char sbuffer[BUFF_SZ];
 static char rbuffer[BUFF_SZ];
 static char full_file_path[FNAME_SZ];
 
+#define BIG_BUFF_SZ 1000000
+static char sBigBuffer[BIG_BUFF_SZ];
+static char rBigBuffer[BIG_BUFF_SZ];
+
 /*
  *  Helper function that processes the command line arguements.  Highlights
  *  how to use a very useful utility called getopt, where you pass it a
@@ -97,10 +101,10 @@ int server_loop(dp_connp dpc, void *sBuff, void *rBuff, int sbuff_sz, int rbuff_
             return DP_CONNECTION_CLOSED;
         }
         fwrite(rBuff, 1, rcvSz, f);
-        rcvSz = rcvSz > 50 ? 50 : rcvSz;    //Just print the first 50 characters max
+        // rcvSz = rcvSz > 50 ? 50 : rcvSz;    //Just print the first 50 characters max
 
-        printf("========================> \n%.*s\n========================> \n", 
-            rcvSz, (char *)rBuff);
+        // printf("========================> \n%.*s\n========================> \n", 
+        //     rcvSz, (char *)rBuff);
     }
 
 }
@@ -109,7 +113,7 @@ int server_loop(dp_connp dpc, void *sBuff, void *rBuff, int sbuff_sz, int rbuff_
 
 void start_client(dp_connp dpc){
     // static char sBuff[500];
-    static char sBuff[3000];
+    static char sBuff[BIG_BUFF_SZ];
 
     if(!dpc->isConnected) {
         printf("Client not connected\n");
